@@ -1,0 +1,17 @@
+[package]
+name = "alice_sovler_helper"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "alice_sovler_helper"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = "0.28.3"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+opt-level = 3
+panic = "abort"

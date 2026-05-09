@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Equation Symbolic Solver Results</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f3f5f7;
+        --panel: #ffffff;
+        --text: #17202a;
+        --muted: #677483;
+        --line: #d9dee5;
+        --accent: #0f766e;
+        --bad: #b42318;
+        --good: #137333;
+        --warn: #915d00;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .wrap {
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 14px 24px;
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        font-weight: 720;
+      }
+
+      .sub {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      main.wrap {
+        display: grid;
+        gap: 12px;
+      }
+
+      .toolbar,
+      .stats,
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        min-width: 0;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        padding: 12px;
+      }
+
+      input,
+      select {
+        height: 34px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--text);
+        padding: 0 10px;
+        font: inherit;
+      }
+
+      input[type="search"] {
+        min-width: 260px;
+        flex: 1;
+      }
+
+      .status {
+        color: var(--muted);
+        margin-left: auto;
+      }
+
+      .load-panel {
+        padding: 12px;
+      }
+
+      .load-panel.complete {
+        display: none;
+      }
+
+      .progress {
+        height: 8px;
+        border-radius: 999px;
+        background: #edf1f5;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        width: 0%;
+        height: 100%;
+        background: var(--accent);
+        transition: width 180ms ease;
+      }
+
+      .logs {
+        display: grid;
+        gap: 4px;
+        margin-top: 10px;
+        color: var(--muted);
+        font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      .log-line.done {
+        color: var(--good);
+      }
+
+      .log-line.error {
+        color: var(--bad);
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        overflow: hidden;
+      }
+
+      .stat {
+        padding: 10px 14px;
+        border-right: 1px solid var(--line);
+      }
+
+      .stat:last-child {
+        border-right: 0;
+      }
+
+      .stat .label {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .stat .value {
+        margin-top: 4px;
+        font-size: 22px;
+        font-weight: 760;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 0.38fr);
+        gap: 12px;
+        height: 900px;
+      }
+
+      .workspace > .panel {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .panel h2,
+      .fold-panel summary,
+      .notes-panel summary {
+        margin: 0;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--line);
+        font-size: 15px;
+        font-weight: 720;
+      }
+
+      .panel-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .panel-title .count {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 520;
+      }
+
+      .fold-panel summary,
+      .notes-panel summary {
+        cursor: pointer;
+        list-style-position: inside;
+      }
+
+      .chart-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        padding: 10px 12px;
+      }
+
+      .chart {
+        min-height: 130px;
+      }
+
+      .explain {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        padding: 12px 14px;
+      }
+
+      .explain h3 {
+        margin: 0 0 8px;
+        font-size: 13px;
+      }
+
+      .explain dl {
+        margin: 0;
+        display: grid;
+        gap: 6px;
+      }
+
+      .explain dl > div {
+        display: grid;
+        grid-template-columns: 118px 1fr;
+        gap: 8px;
+      }
+
+      .explain dt {
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+      }
+
+      .explain dd {
+        margin: 0;
+      }
+
+      .bar {
+        display: grid;
+        grid-template-columns: 120px 1fr 56px;
+        gap: 8px;
+        align-items: center;
+        margin: 6px 0;
+      }
+
+      .bar-name {
+        color: var(--muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .bar-track {
+        height: 10px;
+        border-radius: 999px;
+        background: #edf1f5;
+        overflow: hidden;
+      }
+
+      .bar-fill {
+        height: 100%;
+        background: var(--accent);
+      }
+
+      .bar-count {
+        text-align: right;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .table-wrap {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+      }
+
+      .detail {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+      }
+
+      table {
+        width: 100%;
+        min-width: 860px;
+        table-layout: fixed;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      th:nth-child(1),
+      td:nth-child(1) {
+        width: 92px;
+      }
+
+      th:nth-child(2),
+      td:nth-child(2) {
+        width: 92px;
+      }
+
+      th:nth-child(3),
+      td:nth-child(3),
+      th:nth-child(4),
+      td:nth-child(4) {
+        width: 70px;
+      }
+
+      th:nth-child(5),
+      td:nth-child(5),
+      th:nth-child(6),
+      td:nth-child(6) {
+        width: 126px;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 8px 10px;
+        text-align: left;
+        vertical-align: top;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        background: #f9fafb;
+        z-index: 1;
+        color: var(--muted);
+        font-weight: 650;
+        overflow-wrap: normal;
+        white-space: nowrap;
+      }
+
+      td:nth-child(-n + 6) {
+        overflow: hidden;
+        overflow-wrap: normal;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      tr {
+        cursor: pointer;
+      }
+
+      tr:hover td,
+      tr.selected td {
+        background: #eef7f6;
+      }
+
+      .pill {
+        display: inline-block;
+        min-width: 56px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        text-align: center;
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      .ok {
+        color: var(--good);
+        background: #e8f5ea;
+      }
+
+      .fail {
+        color: var(--bad);
+        background: #fdebea;
+      }
+
+      .missing {
+        color: var(--warn);
+        background: #fff4d8;
+      }
+
+      .detail {
+        padding: 12px 14px 14px;
+      }
+
+      .kv {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 6px 10px;
+        margin-bottom: 12px;
+      }
+
+      .key {
+        color: var(--muted);
+      }
+
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fbfcfd;
+        padding: 10px;
+        font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      .empty {
+        padding: 18px;
+        color: var(--muted);
+      }
+
+      @media (max-width: 900px) {
+        .stats,
+        .workspace,
+        .chart-row,
+        .explain {
+          grid-template-columns: 1fr;
+        }
+
+        .workspace {
+          height: auto;
+        }
+
+        .stat {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <h1>Equation Symbolic Solver Results</h1>
+        <div class="sub">Viewer for <code>data/solver_results.parquet</code></div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="toolbar">
+        <input id="searchBox" type="search" placeholder="Search id, answer, op, prompt..." />
+        <select id="correctFilter">
+          <option value="all">all results</option>
+          <option value="true">correct only</option>
+          <option value="false">failed only</option>
+        </select>
+        <select id="modeFilter">
+          <option value="all">all modes</option>
+        </select>
+        <span id="status" class="status">ready</span>
+      </section>
+
+      <section class="panel load-panel">
+        <div class="progress" aria-label="Loading progress">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+        <div id="loadLogs" class="logs"></div>
+      </section>
+
+      <section class="stats">
+        <div class="stat">
+          <div class="label">Rows</div>
+          <div id="statRows" class="value">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Correct</div>
+          <div id="statCorrect" class="value">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Failed / Missing</div>
+          <div id="statFailed" class="value">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Accuracy</div>
+          <div id="statAcc" class="value">0%</div>
+        </div>
+      </section>
+
+      <details class="panel fold-panel">
+        <summary>Distribution</summary>
+        <div class="chart-row">
+          <div>
+            <strong>Solver category</strong>
+            <div id="categoryChart" class="chart"></div>
+          </div>
+          <div>
+            <strong>Solver mode</strong>
+            <div id="modeChart" class="chart"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="panel notes-panel">
+        <summary>Field Notes</summary>
+        <div class="explain">
+          <div>
+            <h3>Category</h3>
+            <dl>
+              <div><dt>arithmetic</dt><dd>standard symbolic arithmetic solve.</dd></div>
+              <div><dt>little_endian</dt><dd>same search with reversed two-digit values.</dd></div>
+              <div><dt>pure_concat</dt><dd>operators concatenate symbol pairs only.</dd></div>
+              <div><dt>mixed_concat</dt><dd>concat rules mixed with arithmetic rules.</dd></div>
+              <div><dt>query_unseen_concat</dt><dd>query concat op is not seen in examples.</dd></div>
+            </dl>
+          </div>
+          <div>
+            <h3>Mode</h3>
+            <dl>
+              <div><dt>standard</dt><dd>normal digit order.</dd></div>
+              <div><dt>little_endian</dt><dd>two-digit operands are interpreted reversed.</dd></div>
+              <div><dt>alice</dt><dd>Alice-style reversed operand/result variant.</dd></div>
+              <div><dt>missing</dt><dd>no consistent solver program was found.</dd></div>
+            </dl>
+          </div>
+          <div>
+            <h3>Level</h3>
+            <dl>
+              <div><dt>normal</dt><dd>default operation and radix search.</dd></div>
+              <div><dt>deep</dt><dd>wider exact search for harder cases.</dd></div>
+              <div><dt>missing</dt><dd>concat row or unsolved row without a level.</dd></div>
+            </dl>
+          </div>
+        </div>
+      </details>
+
+      <section class="workspace">
+        <div class="panel">
+          <h2 class="panel-title">
+            <span>Rows</span>
+            <span id="rowsShown" class="count">0 shown</span>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Status</th>
+                  <th>Answer</th>
+                  <th>Solver</th>
+                  <th>Category</th>
+                  <th>Mode</th>
+                  <th>Ops</th>
+                </tr>
+              </thead>
+              <tbody id="rowsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <aside class="panel">
+          <h2>Detail</h2>
+          <div id="detail" class="detail empty">Select a row.</div>
+        </aside>
+      </section>
+    </main>
+
+    <script type="module">
+      import * as duckdb from "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.0/+esm";
+
+      const defaultParquet = new URL("../data/solver_results.parquet", location.href).href;
+
+      let db;
+      let conn;
+      let rows = [];
+      let filtered = [];
+      let selectedId = null;
+
+      const els = {
+        searchBox: document.querySelector("#searchBox"),
+        correctFilter: document.querySelector("#correctFilter"),
+        modeFilter: document.querySelector("#modeFilter"),
+        status: document.querySelector("#status"),
+        progressFill: document.querySelector("#progressFill"),
+        loadLogs: document.querySelector("#loadLogs"),
+        statRows: document.querySelector("#statRows"),
+        statCorrect: document.querySelector("#statCorrect"),
+        statFailed: document.querySelector("#statFailed"),
+        statAcc: document.querySelector("#statAcc"),
+        categoryChart: document.querySelector("#categoryChart"),
+        modeChart: document.querySelector("#modeChart"),
+        rowsBody: document.querySelector("#rowsBody"),
+        rowsShown: document.querySelector("#rowsShown"),
+        detail: document.querySelector("#detail"),
+      };
+
+      function setStatus(text) {
+        els.status.textContent = text;
+      }
+
+      function setProgress(percent, text, kind = "done") {
+        els.progressFill.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+        if (text) {
+          const line = document.createElement("div");
+          line.className = `log-line ${kind}`;
+          line.textContent = text;
+          els.loadLogs.appendChild(line);
+        }
+      }
+
+      async function initDuckDB() {
+        if (db) return;
+        setStatus("loading duckdb");
+        setProgress(10, "initializing DuckDB-WASM");
+        const bundles = duckdb.getJsDelivrBundles();
+        const bundle = await duckdb.selectBundle(bundles);
+        setProgress(25, "selected browser-compatible DuckDB bundle");
+        const worker = await duckdb.createWorker(bundle.mainWorker);
+        const logger = new duckdb.ConsoleLogger();
+        db = new duckdb.AsyncDuckDB(logger, worker);
+        await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+        conn = await db.connect();
+        setProgress(40, "DuckDB connection ready");
+      }
+
+      async function loadParquetFromUrl(url) {
+        await initDuckDB();
+        setStatus("loading parquet");
+        setProgress(55, `registering ${new URL(url).pathname}`);
+        await db.registerFileURL("solver_results.parquet", url, duckdb.DuckDBDataProtocol.HTTP, false);
+        await loadRowsFromDuckDB();
+      }
+
+      async function loadRowsFromDuckDB() {
+        setProgress(75, "querying parquet rows");
+        const result = await conn.query("select * from read_parquet('solver_results.parquet')");
+        rows = result.toArray().map((row) => row.toJSON());
+        selectedId = rows[0]?.id ?? null;
+        setProgress(90, "rendering table and charts");
+        rebuildModeFilter();
+        applyFilters();
+        setProgress(100, `loaded ${rows.length} rows`);
+        setStatus(`${rows.length} rows`);
+        document.querySelector(".load-panel").classList.add("complete");
+      }
+
+      function rebuildModeFilter() {
+        const modes = [...new Set(rows.map((r) => valueText(r.solver_mode)).filter(Boolean))].sort();
+        els.modeFilter.innerHTML = '<option value="all">all modes</option>';
+        for (const mode of modes) {
+          const option = document.createElement("option");
+          option.value = mode;
+          option.textContent = mode;
+          els.modeFilter.appendChild(option);
+        }
+      }
+
+      function valueText(value) {
+        if (value === null || value === undefined) return "";
+        return String(value);
+      }
+
+      function boolValue(value) {
+        return value === true || value === "true" || value === 1 || value === "1";
+      }
+
+      function isMissing(row) {
+        return !valueText(row.solver_answer);
+      }
+
+      function applyFilters() {
+        const query = els.searchBox.value.trim().toLowerCase();
+        const correct = els.correctFilter.value;
+        const mode = els.modeFilter.value;
+
+        filtered = rows.filter((row) => {
+          if (correct !== "all" && String(boolValue(row.solver_correct)) !== correct) return false;
+          if (mode !== "all" && valueText(row.solver_mode) !== mode) return false;
+          if (!query) return true;
+          const haystack = [
+            row.id,
+            row.answer,
+            row.solver_answer,
+            row.solver_category,
+            row.solver_mode,
+            row.solver_ops,
+            row.prompt,
+          ]
+            .map(valueText)
+            .join("\n")
+            .toLowerCase();
+          return haystack.includes(query);
+        });
+
+        if (!filtered.some((row) => row.id === selectedId)) {
+          selectedId = filtered[0]?.id ?? null;
+        }
+        render();
+      }
+
+      function render() {
+        renderStats();
+        renderChart(els.categoryChart, "solver_category");
+        renderChart(els.modeChart, "solver_mode");
+        renderTable();
+        renderDetail();
+      }
+
+      function renderStats() {
+        const total = filtered.length;
+        const correct = filtered.filter((row) => boolValue(row.solver_correct)).length;
+        const failed = total - correct;
+        els.statRows.textContent = total.toLocaleString();
+        els.statCorrect.textContent = correct.toLocaleString();
+        els.statFailed.textContent = failed.toLocaleString();
+        els.statAcc.textContent = total ? `${((correct / total) * 100).toFixed(1)}%` : "0%";
+      }
+
+      function renderChart(target, field) {
+        const counts = new Map();
+        for (const row of filtered) {
+          const key = valueText(row[field]) || "missing";
+          counts.set(key, (counts.get(key) ?? 0) + 1);
+        }
+        const entries = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+        const max = Math.max(1, ...entries.map(([, count]) => count));
+        target.innerHTML = "";
+        if (!entries.length) {
+          target.innerHTML = '<div class="empty">No rows.</div>';
+          return;
+        }
+        for (const [name, count] of entries) {
+          const bar = document.createElement("div");
+          bar.className = "bar";
+          bar.innerHTML = `
+            <div class="bar-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${(count / max) * 100}%"></div></div>
+            <div class="bar-count">${count}</div>
+          `;
+          target.appendChild(bar);
+        }
+      }
+
+      function renderTable() {
+        els.rowsShown.textContent = `${filtered.length.toLocaleString()} shown`;
+        els.rowsBody.innerHTML = "";
+        for (const row of filtered) {
+          const tr = document.createElement("tr");
+          if (row.id === selectedId) tr.className = "selected";
+          tr.addEventListener("click", () => {
+            selectedId = row.id;
+            renderTable();
+            renderDetail();
+          });
+          const status = boolValue(row.solver_correct)
+            ? '<span class="pill ok">correct</span>'
+            : isMissing(row)
+              ? '<span class="pill missing">missing</span>'
+              : '<span class="pill fail">wrong</span>';
+          tr.innerHTML = `
+            <td>${escapeHtml(row.id)}</td>
+            <td>${status}</td>
+            <td>${escapeHtml(row.answer)}</td>
+            <td>${escapeHtml(row.solver_answer)}</td>
+            <td>${escapeHtml(row.solver_category)}</td>
+            <td>${escapeHtml(row.solver_mode)}</td>
+            <td>${escapeHtml(row.solver_ops)}</td>
+          `;
+          els.rowsBody.appendChild(tr);
+        }
+      }
+
+      function renderDetail() {
+        const row = filtered.find((item) => item.id === selectedId);
+        if (!row) {
+          els.detail.className = "detail empty";
+          els.detail.textContent = "Select a row.";
+          return;
+        }
+        els.detail.className = "detail";
+        els.detail.innerHTML = `
+          <div class="kv">
+            <div class="key">id</div><div>${escapeHtml(row.id)}</div>
+            <div class="key">answer</div><div>${escapeHtml(row.answer)}</div>
+            <div class="key">solver</div><div>${escapeHtml(row.solver_answer)}</div>
+            <div class="key">correct</div><div>${escapeHtml(row.solver_correct)}</div>
+            <div class="key">category</div><div>${escapeHtml(row.solver_category)}</div>
+            <div class="key">mode</div><div>${escapeHtml(row.solver_mode)}</div>
+            <div class="key">tier</div><div>${escapeHtml(row.solver_tier)}</div>
+            <div class="key">level</div><div>${escapeHtml(row.solver_level)}</div>
+            <div class="key">radix</div><div>${escapeHtml(row.solver_radix)}</div>
+            <div class="key">numeric</div><div>${escapeHtml(row.solver_numeric_answer)}</div>
+          </div>
+          <p><strong>Ops</strong></p>
+          <pre>${formatJson(row.solver_ops)}</pre>
+          <p><strong>Mapping</strong></p>
+          <pre>${formatJson(row.solver_mapping)}</pre>
+          <p><strong>Prompt</strong></p>
+          <pre>${escapeHtml(row.prompt)}</pre>
+        `;
+      }
+
+      function formatJson(value) {
+        const text = valueText(value);
+        if (!text) return "";
+        try {
+          return escapeHtml(JSON.stringify(JSON.parse(text), null, 2));
+        } catch {
+          return escapeHtml(text);
+        }
+      }
+
+      function escapeHtml(value) {
+        return valueText(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      els.searchBox.addEventListener("input", applyFilters);
+      els.correctFilter.addEventListener("change", applyFilters);
+      els.modeFilter.addEventListener("change", applyFilters);
+
+      loadParquetFromUrl(defaultParquet).catch((error) => {
+        console.error(error);
+        setProgress(100, `failed: ${error.message ?? error}`, "error");
+        setStatus(`failed: ${error.message ?? error}`);
+      });
+    </script>
+  </body>
+</html>
