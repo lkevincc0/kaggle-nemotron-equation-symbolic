@@ -563,7 +563,8 @@
     <script type="module">
       import * as duckdb from "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.0/+esm";
 
-      const defaultParquet = new URL("../data/solver_results.parquet", location.href).href;
+      const defaultParquet =
+        "https://github.com/lkevincc0/kaggle-nemotron-equation-symbolic/raw/refs/heads/main/data/solver_results.parquet";
 
       let db;
       let conn;
