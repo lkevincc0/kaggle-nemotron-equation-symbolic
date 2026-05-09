@@ -563,8 +563,10 @@
     <script type="module">
       import * as duckdb from "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.0/+esm";
 
-      const defaultParquet =
-        "https://github.com/lkevincc0/kaggle-nemotron-equation-symbolic/raw/refs/heads/main/data/solver_results.parquet";
+      const remoteParquet =
+        "https://raw.githubusercontent.com/lkevincc0/kaggle-nemotron-equation-symbolic/main/data/solver_results.parquet";
+      const bundledParquet = "solver_results.parquet";
+      const localDataParquet = "../data/solver_results.parquet";
 
       let db;
       let conn;
@@ -619,12 +621,50 @@
         setProgress(40, "DuckDB connection ready");
       }
 
-      async function loadParquetFromUrl(url) {
+      function getParquetCandidates() {
+        const isLocal =
+          location.protocol === "file:" ||
+          location.hostname === "localhost" ||
+          location.hostname === "127.0.0.1";
+        return isLocal
+          ? [localDataParquet, bundledParquet, remoteParquet]
+          : [bundledParquet, remoteParquet];
+      }
+
+      async function loadParquetFromCandidates(urls) {
         await initDuckDB();
+        let lastError;
+        for (const url of urls) {
+          try {
+            await loadParquetFromUrl(url);
+            return;
+          } catch (error) {
+            lastError = error;
+            setProgress(60, `fallback after ${formatUrlForLog(url)}: ${error.message ?? error}`, "error");
+          }
+        }
+        throw lastError ?? new Error("no parquet source could be loaded");
+      }
+
+      async function loadParquetFromUrl(url) {
         setStatus("loading parquet");
-        setProgress(55, `registering ${new URL(url).pathname}`);
-        await db.registerFileURL("solver_results.parquet", url, duckdb.DuckDBDataProtocol.HTTP, false);
+        setProgress(55, `fetching ${formatUrlForLog(url)}`);
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`fetch failed ${response.status} ${response.statusText}`);
+        }
+        const buffer = new Uint8Array(await response.arrayBuffer());
+        setProgress(65, `registering ${(buffer.byteLength / 1024).toFixed(1)} KiB parquet buffer`);
+        await db.registerFileBuffer("solver_results.parquet", buffer);
         await loadRowsFromDuckDB();
+      }
+
+      function formatUrlForLog(url) {
+        try {
+          return new URL(url, location.href).pathname;
+        } catch {
+          return url;
+        }
       }
 
       async function loadRowsFromDuckDB() {
@@ -819,7 +859,7 @@
       els.correctFilter.addEventListener("change", applyFilters);
       els.modeFilter.addEventListener("change", applyFilters);
 
-      loadParquetFromUrl(defaultParquet).catch((error) => {
+      loadParquetFromCandidates(getParquetCandidates()).catch((error) => {
         console.error(error);
         setProgress(100, `failed: ${error.message ?? error}`, "error");
         setStatus(`failed: ${error.message ?? error}`);
