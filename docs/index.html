@@ -410,6 +410,64 @@
         font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
 
+      .detail-table {
+        width: 100%;
+        min-width: 0;
+        table-layout: auto;
+        margin: 0;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        border-collapse: separate;
+        border-spacing: 0;
+        overflow: hidden;
+        background: #fbfcfd;
+        font-size: 13px;
+      }
+
+      .detail-table th,
+      .detail-table td {
+        padding: 7px 9px;
+        border-bottom: 1px solid var(--line);
+        white-space: normal;
+      }
+
+      .detail-table tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .detail-table th {
+        position: static;
+        background: #f6f8fa;
+        color: var(--muted);
+      }
+
+      .detail-table tr {
+        cursor: default;
+      }
+
+      .detail-table tr:hover td {
+        background: transparent;
+      }
+
+      .symbol {
+        display: inline-flex;
+        min-width: 28px;
+        min-height: 28px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: #fff;
+        color: var(--text);
+        font: 15px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      .codepoint {
+        margin-left: 7px;
+        color: var(--muted);
+        font: 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
       .empty {
         padding: 18px;
         color: var(--muted);
@@ -828,22 +886,54 @@
             <div class="key">numeric</div><div>${escapeHtml(row.solver_numeric_answer)}</div>
           </div>
           <p><strong>Ops</strong></p>
-          <pre>${formatJson(row.solver_ops)}</pre>
+          ${formatObjectTable(row.solver_ops, "Operator", "Operation")}
           <p><strong>Mapping</strong></p>
-          <pre>${formatJson(row.solver_mapping)}</pre>
+          ${formatObjectTable(row.solver_mapping, "Symbol", "Digit")}
           <p><strong>Prompt</strong></p>
           <pre>${escapeHtml(row.prompt)}</pre>
         `;
       }
 
-      function formatJson(value) {
+      function parseObject(value) {
         const text = valueText(value);
-        if (!text) return "";
+        if (!text) return null;
         try {
-          return escapeHtml(JSON.stringify(JSON.parse(text), null, 2));
+          const parsed = JSON.parse(text);
+          return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
         } catch {
-          return escapeHtml(text);
+          return null;
         }
+      }
+
+      function formatObjectTable(value, keyLabel, valueLabel) {
+        const obj = parseObject(value);
+        if (!obj) return `<pre>${escapeHtml(value)}</pre>`;
+        const rowsHtml = Object.entries(obj)
+          .map(
+            ([key, item]) => `
+              <tr>
+                <td>${formatSymbol(key)}</td>
+                <td>${escapeHtml(item)}</td>
+              </tr>
+            `,
+          )
+          .join("");
+        return `
+          <table class="detail-table">
+            <thead>
+              <tr><th>${escapeHtml(keyLabel)}</th><th>${escapeHtml(valueLabel)}</th></tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        `;
+      }
+
+      function formatSymbol(symbol) {
+        const text = valueText(symbol);
+        const codepoints = Array.from(text)
+          .map((ch) => `U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}`)
+          .join(" ");
+        return `<span class="symbol">${escapeHtml(text)}</span><span class="codepoint">${codepoints}</span>`;
       }
 
       function escapeHtml(value) {
